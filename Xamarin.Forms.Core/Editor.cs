@@ -8,7 +8,7 @@ namespace Xamarin.Forms
 	[RenderWith(typeof(_EditorRenderer))]
 	public class Editor : InputView, IEditorController, IFontElement, ITextElement, IElementConfiguration<Editor>
 	{
-		public static readonly BindableProperty TextProperty = BindableProperty.Create("Text", typeof(string), typeof(Editor), null, BindingMode.TwoWay, propertyChanged: (bindable, oldValue, newValue)
+		public static readonly BindableProperty TextProperty = BindableProperty.Create(nameof(Text), typeof(string), typeof(Editor), null, BindingMode.TwoWay, propertyChanged: (bindable, oldValue, newValue)
 			=> ((Editor)bindable).TextChanged?.Invoke(bindable, new TextChangedEventArgs((string)oldValue, (string)newValue)));
 
 		public static readonly BindableProperty FontFamilyProperty = FontElement.FontFamilyProperty;
@@ -19,7 +19,17 @@ namespace Xamarin.Forms
 
 		public static readonly BindableProperty TextColorProperty = TextElement.TextColorProperty;
 
+
+		public static readonly BindableProperty EditorSizeOptionProperty = BindableProperty.Create(nameof(SizeOption), typeof(EditorSizeOption), typeof(Editor), defaultValue: EditorSizeOption.Default);
+
 		readonly Lazy<PlatformConfigurationRegistry<Editor>> _platformConfigurationRegistry;
+
+
+		public EditorSizeOption SizeOption
+		{
+			get { return (EditorSizeOption)GetValue(EditorSizeOptionProperty); }
+			set { SetValue(EditorSizeOptionProperty, value); }
+		}
 
 		public string Text
 		{

@@ -1,7 +1,11 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using CoreGraphics;
 using Foundation;
 using UIKit;
+using Xamarin.Forms.Internals;
 using RectangleF = CoreGraphics.CGRect;
 
 namespace Xamarin.Forms.Platform.iOS
@@ -25,7 +29,10 @@ namespace Xamarin.Forms.Platform.iOS
 					Control.Changed -= HandleChanged;
 					Control.Started -= OnStarted;
 					Control.Ended -= OnEnded;
-					Control.ShouldChangeText -= ShouldChangeText;
+					Control.ShouldChangeText -= ShouldChangeText; 
+					(Control as FormsUITextView).FrameChanged -= OnFrameChanged;
+
+
 				}
 			}
 
@@ -41,7 +48,7 @@ namespace Xamarin.Forms.Platform.iOS
 
 			if (Control == null)
 			{
-				SetNativeControl(new UITextView(RectangleF.Empty));
+				SetNativeControl(new FormsUITextView(RectangleF.Empty));
 
 				if (Device.Idiom == TargetIdiom.Phone)
 				{
@@ -62,7 +69,9 @@ namespace Xamarin.Forms.Platform.iOS
 				Control.Changed += HandleChanged;
 				Control.Started += OnStarted;
 				Control.Ended += OnEnded;
-				Control.ShouldChangeText += ShouldChangeText;
+				Control.ShouldChangeText += ShouldChangeText; 
+				(Control as FormsUITextView).FrameChanged += OnFrameChanged;
+
 			}
 
 			UpdateText();
@@ -73,6 +82,15 @@ namespace Xamarin.Forms.Platform.iOS
 			UpdateTextAlignment();
 			UpdateMaxLength();
 		}
+
+
+		/*
+		 * UIFont *font = [UIFont boldSystemFontOfSize:11.0];
+CGSize size = [string sizeWithFont:font 
+                      constrainedToSize:myUITextView.frame.size 
+                      lineBreakMode:UILineBreakModeWordWrap]; // default mode
+float numberOfLines = size.height / font.lineHeight;*/
+
 
 		protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
 		{
@@ -100,9 +118,23 @@ namespace Xamarin.Forms.Platform.iOS
 				UpdateMaxLength();
 		}
 
+
+
 		void HandleChanged(object sender, EventArgs e)
 		{
 			ElementController.SetValueFromRenderer(Editor.TextProperty, Control.Text);
+			if (Element.SizeOption == EditorSizeOption.AutoSizeToTextChanges)
+			{
+				Element.InvalidateMeasureNonVirtual(InvalidationTrigger.MeasureChanged);
+			}
+		}
+
+		private void OnFrameChanged(object sender, EventArgs e)
+		{
+			if (Element.SizeOption == EditorSizeOption.AutoSizeToTextChanges)
+			{
+				Control.ScrollRangeToVisible(new NSRange(0, 0));
+			}
 		}
 
 		void OnEnded(object sender, EventArgs eventArgs)
@@ -180,6 +212,43 @@ namespace Xamarin.Forms.Platform.iOS
 		{
 			var newLength = textView.Text.Length + text.Length - range.Length;
 			return newLength <= Element.MaxLength;
+		}
+
+		internal class FormsUITextView : UITextView
+		{
+			public event EventHandler ContentSizeChanged;
+			public event EventHandler FrameChanged;
+
+			public FormsUITextView(RectangleF frame) : base(frame)
+			{
+			}
+
+
+			public override RectangleF Frame
+			{
+				get
+				{
+					return base.Frame;
+				}
+				set
+				{
+					base.Frame = value;
+					FrameChanged?.Invoke(this, EventArgs.Empty);
+				}
+			}
+
+			public override CGSize ContentSize
+			{
+				get
+				{
+					return base.ContentSize;
+				}
+				set
+				{
+					base.ContentSize = value;
+					ContentSizeChanged?.Invoke(this, EventArgs.Empty);
+				}
+			}
 		}
 	}
 }

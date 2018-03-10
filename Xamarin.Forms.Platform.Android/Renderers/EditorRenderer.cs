@@ -35,6 +35,10 @@ namespace Xamarin.Forms.Platform.Android
 
 		void ITextWatcher.AfterTextChanged(IEditable s)
 		{
+			if(Element.SizeOption == EditorSizeOption.AutoSizeToTextChanges)
+			{
+				Element.InvalidateMeasureNonVirtual(InvalidationTrigger.MeasureChanged);
+			}
 		}
 
 		void ITextWatcher.BeforeTextChanged(ICharSequence s, int start, int count, int after)
